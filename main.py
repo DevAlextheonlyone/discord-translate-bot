@@ -1,48 +1,46 @@
 import discord
-from googletrans import Translator
 import os
+from googletrans import Translator
 
 intents = discord.Intents.default()
 intents.message_content = True
 
-client = discord.Client(intents=intents)
+bot = discord.Bot(intents=intents)
 translator = Translator()
 
-@client.event
+@bot.event
 async def on_ready():
-    print(f"Inloggad som {client.user}")
+    print(f"✅ Logged in as {bot.user}")
 
-@client.event
+@bot.event
 async def on_message(message):
+    # ignorera bottar
     if message.author.bot:
         return
 
     content = message.content
 
-    # Reagera endast om meddelandet börjar med "translate "
+    # ska BARA trigga om man börjar med "translate "
     if not content.lower().startswith("translate "):
         return
 
-    # Ta bort ordet "translate"
-    swedish_text = content[len("translate "):].strip()
-
-    if not swedish_text:
-        await message.channel.send("❌ Skriv text efter `translate`")
+    text_to_translate = content[len("translate "):].strip()
+    if not text_to_translate:
         return
 
     try:
-        result = translator.translate(
-            swedish_text,
+        translated = translator.translate(
+            text_to_translate,
             src="sv",
             dest="en"
-        )
+        ).text
 
-        await message.channel.send(
-            f"🇸🇪 → 🇬🇧\n{result.text}"
+        # redigera användarens meddelande
+        await message.edit(
+            content=f"🇸🇪 {text_to_translate}\n🇬🇧 {translated}"
         )
 
     except Exception as e:
-        await message.channel.send("❌ Kunde inte översätta texten")
+        print("Translation error:", e)
 
-# DISCORD TOKEN från Render Environment Variable
-client.run(os.environ["DISCORD_TOKEN"])
+bot.run(os.getenv("DISCORD_TOKEN"))
